@@ -1,0 +1,41 @@
+search_index: /srv/graphite/index
+finders:
+  - metronome.MetronomeFinder
+functions:
+  - graphite_api.functions.SeriesFunctions
+  - graphite_api.functions.PieFunctions
+metronome:
+  url: https://metrics.powerdns.com/metronome
+  metrics_cache_expiry: 300
+logging:
+  version: 1
+  disable_existing_loggers: true
+  handlers:
+    file:
+      class: logging.FileHandler
+      filename: /var/log/graphite-api.log
+    stdout:
+      #class: logging.StreamHandler
+      class: logging.FileHandler
+      filename: /dev/stdout
+  loggers:
+    graphite_api:
+      handlers:
+        - stdout
+      propagate: true
+      level: DEBUG
+    graphite_influxdb:
+      handlers:
+        - stdout
+      propagate: true
+      level: INFO
+    metronome:
+      handlers:
+        - stdout
+      propagate: true
+      level: DEBUG
+    root:
+      handlers:
+        - stdout
+      propagate: true
+      level: INFO

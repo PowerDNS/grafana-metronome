@@ -1,0 +1,33 @@
+version: '2'
+services:
+
+  grafana:
+    image: grafana/grafana
+    volumes:
+      - data:/var/lib/grafana
+    ports:
+      - "13000:3000"
+    environment:
+      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
+    networks:
+      - net
+
+  graphiteapi:
+    build: graphite-api/
+    ports:
+      - "18003:8000"
+    volumes:
+      - graphiteapi:/src/graphite
+      - ./graphite-api/metronome:/usr/local/lib/python2.7/dist-packages/metronome
+    networks:
+      - net
+    command: gunicorn -b 0.0.0.0:8000 -w 2 --threads 10 --timeout 60 --reload --log-level debug graphite_api.app:app
+
+volumes:
+  data:
+    driver: local
+  graphiteapi:
+    driver: local
+
+networks:
+  net:
