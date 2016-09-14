@@ -2260,7 +2260,7 @@
         "datasource": null,
         "hide": 0,
         "includeAll": false,
-        "label": "smoothing",
+        "label": "smoothing (moving average)",
         "multi": false,
         "name": "smoothing",
         "options": [
@@ -2308,6 +2308,26 @@
             "selected": false,
             "text": "50",
             "value": "50"
+          },
+          {
+            "selected": false,
+            "text": "'5min'",
+            "value": "'5min'"
+          },
+          {
+            "selected": false,
+            "text": "'10min'",
+            "value": "'10min'"
+          },
+          {
+            "selected": false,
+            "text": "'30min'",
+            "value": "'30min'"
+          },
+          {
+            "selected": false,
+            "text": "'1hour'",
+            "value": "'1hour'"
           }
         ],
         "query": "",

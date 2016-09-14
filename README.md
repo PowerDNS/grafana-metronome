@@ -1,10 +1,10 @@
 # Grafana integration with PowerDNS Metronome
 
-This repository provides integration between the [Grafana dashboard](http://grafana.org/) and [PowerDNS Metronome](https://github.com/ahupowerdns/metronome), allowing you to graph Metronome datasources in Grafana.
+This repository provides integration between the [Grafana dashboard](http://grafana.org/) and [PowerDNS Metronome](https://github.com/ahupowerdns/metronome), allowing you to graph Metronome datasources in Grafana. Pre-made dashboard configurations to monitor PowerDNS services are included (currently only for dnsdist, others coming soon).
 
 Integration is implemented using a custom Metronome loader plugin for the [Graphite-API server](http://graphite-api.readthedocs.io/en/latest/). This API server can be configured as a Graphite data source in Grafana to translate API requests to Metronome's REST API.
 
-Additionally, it provides a ready-to-run [Docker Compose](https://docs.docker.com/compose/) file to quickly get Grafana and the customized Graphite-API server up and running with a simple `docker-compose up`.
+It provides a ready-to-run [Docker Compose](https://docs.docker.com/compose/) file to quickly get Grafana and the customized Graphite-API server up and running with a simple `docker-compose up`. 
 
 
 ## Quickstart using Docker
@@ -24,13 +24,15 @@ You will now have Grafana running on <http://localhost:13000/> with 'admin' as t
 
 After logging in as admin, click on the left-top menu > Data Sources > Add Data Source. Fill out the following fields:
 
- * Name: pick anything, like 'metronome'. You might want to click 'default' to make it the default data source.
+ * Name: make sure to use 'metronome' to be able to use the shipped PowerDNS dashboard configurations. You might want to click 'default' to make it the default data source.
  * Type: graphite
  * Url: http://graphiteapi:8000 (this hostname will be available within the Docker container)
  * Access: proxy
  * No authentication
 
-Now you are ready to add new dashboards. You might want to check the [Grafana Getting Started Guide](http://docs.grafana.org/guides/gettingstarted/) on how to do this.
+If you go to your dashboards, your will find a few PowerDNS dashboards that display similar graphs as the default Metronome distribution (currently only for dnsdist, the ones for the recursor and authoritive server are coming soon).
+
+You might want to check the [Grafana Getting Started Guide](http://docs.grafana.org/guides/gettingstarted/) on how to add new dashboards and customize the shipped ones.
 
 
 ## Manual installation
@@ -48,11 +50,12 @@ In order for Graphite-API to connect to Metronome servers, you need to copy the 
       # How often to update the list of Metronome metrics (in seconds)
       metrics_cache_expiry: 300
 
-Grafana does not require any special configuration.
+Under `dashboards/` you will find a few special PowerDNS dashboards JSON files that will help you monitor PowerDNS services. You can either import them in Grafana, or add the directory as a JSON dashboard file loading location to the Grafana configuration. Customizing these is best done by editing `dashboards/generate.py` and running it.
 
 Even if you are not using Docker, you might want to look at the following files for inspiration on how to configure your setup and run Graphite-API:
 
  * `docker-compose.yml`
+ * `grafana.ini`
  * `graphite-api/Dockerfile`
  * `graphite-api/graphite-api.yaml`
 
@@ -74,5 +77,4 @@ Graphite-API requests:
 ## TODO
 
  * Distribute the Graphite-API metronome loader plugin as a proper Python package.
- * Include Grafana JSON dashboard files that provide similar graphs as Metronome does out of the box.
 

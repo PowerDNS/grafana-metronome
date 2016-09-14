@@ -218,8 +218,8 @@ dnsdist = Dashboard(title="PowerDNS dnsdist [default]")
 dnsdist.add_template_var(
     name='dnsdist', label='dnsdist server', query='dnsdist.*', multi=False)
 dnsdist.add_template_var_choice(
-    name='smoothing', label='smoothing', multi=False,
-    options=[1, 3, 5, 7, 10, 15, 20, 30, 50], default=5)
+    name='smoothing', label='smoothing (moving average)', multi=False,
+    options=[1, 3, 5, 7, 10, 15, 20, 30, 50, "'5min'", "'10min'", "'30min'", "'1hour'"], default=5)
 
 dnsdist.add_graph_row(
     title='Number of queries',
