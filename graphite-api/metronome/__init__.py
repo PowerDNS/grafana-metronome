@@ -194,7 +194,7 @@ class MetronomeFinder(object):
 
         data = {}
         # FIXME: can we get the requested number?
-        points = min(2000, (end_time - start_time) / 10)
+        points = min(720, (end_time - start_time) / 10)
         start_time = start_time
         end_time = end_time
         step = (end_time - start_time) / points

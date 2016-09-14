@@ -72,6 +72,41 @@ class Dashboard:
             "regex": regex,
             "type": "query"
         })
+    
+    def add_template_var_choice(self, name, label, options, default=None, 
+                                multi=False, include_all=False):
+        options = map(str, options)
+        if not default:
+            default = options[0]
+        else:
+            default = str(default)
+
+        options_list = [
+            {
+                "text": x,
+                "value": x,
+                "selected": x == default
+            }
+            for x in options
+        ]
+        options_str = ', '.join(options)
+
+        self.data['templating']['list'].append({
+            "type": "custom",
+            "datasource": None,
+            "refresh": 0,
+            "name": "smoothing",
+            "hide": 0,
+            "options": options_list,
+            "includeAll": include_all,
+            "multi": multi,
+            "query": options_str,
+            "current": {
+              "text": default,
+              "value": default
+            },
+            "label": label,
+        })
 
     def add_row(self, title, collapse=False):
         row = {
@@ -114,7 +149,6 @@ class Dashboard:
            "lines": True,
            "linewidth": 2,
            "links": [],
-           #"nullPointMode": "connected",
            "nullPointMode": "null",
            "percentage": False,
            "pointradius": 5,
@@ -183,13 +217,16 @@ def compact(s):
 dnsdist = Dashboard(title="PowerDNS dnsdist [default]")
 dnsdist.add_template_var(
     name='dnsdist', label='dnsdist server', query='dnsdist.*', multi=False)
+dnsdist.add_template_var_choice(
+    name='smoothing', label='smoothing', multi=False,
+    options=[1, 3, 5, 7, 10, 15, 20, 30, 50], default=5)
 
 dnsdist.add_graph_row(
     title='Number of queries',
     targets=[
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.servfail-responses), 10), 'Servfail/s')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.queries), 10), 'Queries/s')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.responses), 10), 'Responses/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.servfail-responses), $smoothing), 'Servfail/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.queries), $smoothing), 'Queries/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.responses), $smoothing), 'Responses/s')",
     ],
 )
 
@@ -198,12 +235,12 @@ dnsdist.add_graph(
     title='Latency (answers/s in a latency band)',
     span=6,
     targets=[
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.latency0-1), 10), '<1 ms')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.latency1-10), 10), '<10 ms')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.latency10-50), 10), '<50 ms')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.latency50-100), 10), '<100 ms')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.latency100-1000), 10), '<1000 ms')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.latency-slow), 10), 'With slow answers')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.latency0-1), $smoothing), '<1 ms')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.latency1-10), $smoothing), '<10 ms')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.latency10-50), $smoothing), '<50 ms')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.latency50-100), $smoothing), '<100 ms')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.latency100-1000), $smoothing), '<1000 ms')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.latency-slow), $smoothing), 'With slow answers')",
     ],
     stack=True
 )
@@ -223,23 +260,23 @@ dnsdist.add_graph(
     title='Query drops',
     span=6,
     targets=[
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.rule-drop), 10), 'Rule drops/s')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.acl-drops), 10), 'ACL drops/s')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.dyn-blocked), 10), 'Dynamic drops/s')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.block-filter), 10), 'Blockfilter drops/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.rule-drop), $smoothing), 'Rule drops/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.acl-drops), $smoothing), 'ACL drops/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.dyn-blocked), $smoothing), 'Dynamic drops/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.block-filter), $smoothing), 'Blockfilter drops/s')",
     ],
 )
 dnsdist.add_graph(
     title='Query policy',
     span=6,
     targets=[
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.rdqueries), 10), 'RD Queries/s')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.rule-nxdomain), 10), 'Rule NXDomain/s')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.self-answered), 10), 'Rule self-answered/s')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.no-policy), 10), 'Rule self-answered/s')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.noncompliant-queries), 10), 'Non-compliant queries/s')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.noncompliant-responses), 10), 'Non-compliant responses/s')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.empty-queries), 10), 'Empty queries/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.rdqueries), $smoothing), 'RD Queries/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.rule-nxdomain), $smoothing), 'Rule NXDomain/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.self-answered), $smoothing), 'Rule self-answered/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.no-policy), $smoothing), 'Rule self-answered/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.noncompliant-queries), $smoothing), 'Non-compliant queries/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.noncompliant-responses), $smoothing), 'Non-compliant responses/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.empty-queries), $smoothing), 'Empty queries/s')",
     ],
 )
 
@@ -248,8 +285,8 @@ dnsdist.add_graph(
     title='Timeouts and errors',
     span=6,
     targets=[
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.downstream-timeouts), 10), 'Timeouts/s')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.downstream-send-errors), 10), 'Errors/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.downstream-timeouts), $smoothing), 'Timeouts/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.downstream-send-errors), $smoothing), 'Errors/s')",
     ],
 )
 # TODO: filter out small values? Now a single miss will show as 100%
@@ -267,7 +304,7 @@ dnsdist.add_graph(
                     perSecond(dnsdist.$dnsdist.main.cache-hits)
                 )
             )
-        , 10), 'cache miss rate (%)')
+        , $smoothing), 'cache miss rate (%)')
         """)
     ],
 )
@@ -279,8 +316,8 @@ dnsdist.add_graph(
     y_format='percent',
     stack=True,
     targets=[
-        "alias(scale(movingAverage(perSecond(dnsdist.$dnsdist.main.cpu-sys-msec), 10), 0.1), 'System CPU')",
-        "alias(scale(movingAverage(perSecond(dnsdist.$dnsdist.main.cpu-user-msec), 10), 0.1), 'Total (system+user) CPU')",
+        "alias(scale(movingAverage(perSecond(dnsdist.$dnsdist.main.cpu-sys-msec), $smoothing), 0.1), 'System CPU')",
+        "alias(scale(movingAverage(perSecond(dnsdist.$dnsdist.main.cpu-user-msec), $smoothing), 0.1), 'Total (system+user) CPU')",
     ],
 )
 
@@ -322,7 +359,7 @@ dnsdist.add_graph(
     title='Queries/s per server',
     span=6,
     targets=[
-        "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.servers.*.queries), 10), 4)",
+        "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.servers.*.queries), $smoothing), 4)",
     ],
 )
 dnsdist.add_graph(
@@ -339,14 +376,14 @@ dnsdist.add_graph(
     title='Drops/s per server',
     span=4,
     targets=[
-        "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.servers.*.drops), 10), 4)",
+        "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.servers.*.drops), $smoothing), 4)",
     ],
 )
 dnsdist.add_graph(
     title='Send errors/s per server',
     span=4,
     targets=[
-        "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.servers.*.senderrors), 10), 4)",
+        "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.servers.*.senderrors), $smoothing), 4)",
     ],
 )
 dnsdist.add_graph(
@@ -385,14 +422,14 @@ dnsdist.add_graph(
     title='Cache hits per pool',
     span=6,
     targets=[
-        "aliasByNode(dnsdist.$dnsdist.main.pools.*.cache-hits, 4)",
+        "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.pools.*.cache-hits), $smoothing), 4)",
     ],
 )
 dnsdist.add_graph(
     title='Cache misses per pool',
     span=6,
     targets=[
-        "aliasByNode(dnsdist.$dnsdist.main.pools.*.cache-misses, 4)",
+        "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.pools.*.cache-misses), $smoothing), 4)",
     ],
 )
 
@@ -401,28 +438,28 @@ dnsdist.add_graph(
     title='Cache deferred inserts per pool',
     span=3,
     targets=[
-        "aliasByNode(dnsdist.$dnsdist.main.pools.*.cache-deferred-inserts, 4)",
+        "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.pools.*.cache-deferred-inserts), $smoothing), 4)",
     ],
 )
 dnsdist.add_graph(
     title='Cache deferred lookups per pool',
     span=3,
     targets=[
-        "aliasByNode(dnsdist.$dnsdist.main.pools.*.cache-deferred-lookups, 4)",
+        "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.pools.*.cache-deferred-lookups), $smoothing), 4)",
     ],
 )
 dnsdist.add_graph(
     title='Cache lookup collisions per pool',
     span=3,
     targets=[
-        "aliasByNode(dnsdist.$dnsdist.main.pools.*.cache-lookup-collisions, 4)",
+        "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.pools.*.cache-lookup-collisions), $smoothing), 4)",
     ],
 )
 dnsdist.add_graph(
     title='Cache insert collisions per pool',
     span=3,
     targets=[
-        "aliasByNode(dnsdist.$dnsdist.main.pools.*.cache-insert-collisions, 4)",
+        "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.pools.*.cache-insert-collisions), $smoothing), 4)",
     ],
 )
 
@@ -431,7 +468,7 @@ dnsdist.add_graph_row(
     title='Queries/s per frontend',
     collapse=True,
     targets=[
-        "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.frontends.*.queries), 10), 4)",
+        "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.frontends.*.queries), $smoothing), 4)",
     ],
 )
 
