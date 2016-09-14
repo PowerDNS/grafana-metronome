@@ -34,6 +34,11 @@ logging:
         - stdout
       propagate: true
       level: DEBUG
+    requests:
+      handlers:
+        - stdout
+      propagate: true
+      level: DEBUG
     root:
       handlers:
         - stdout

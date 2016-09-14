@@ -5,10 +5,14 @@ services:
     image: grafana/grafana
     volumes:
       - data:/var/lib/grafana
+      # Uncomment these to override the logo and favicon in Grafana
+      #- ./img/powerdns-logo.svg:/usr/share/grafana/public/img/grafana_icon.svg:ro
+      #- ./img/powerdns-favicon.png:/usr/share/grafana/public/img/fav32.png:ro
     ports:
       - "13000:3000"
     environment:
-      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
+      GF_USERS_DEFAULT_THEME: light
+      #GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
     networks:
       - net
 
@@ -21,7 +25,7 @@ services:
       - ./graphite-api/metronome:/usr/local/lib/python2.7/dist-packages/metronome
     networks:
       - net
-    command: gunicorn -b 0.0.0.0:8000 -w 2 --threads 10 --timeout 60 --reload --log-level debug graphite_api.app:app
+    command: gunicorn -b 0.0.0.0:8000 -w 2 --threads 10 --timeout 60 --reload --log-level debug --access-logfile /dev/stdout graphite_api.app:app
 
 volumes:
   data:
