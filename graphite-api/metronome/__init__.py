@@ -10,7 +10,11 @@ from graphite_api.node import LeafNode, BranchNode, Node
 import requests
 
 
-URLLENGTH = 8000
+# yahttp (used in Metronome) has a default max url length of 2048 bytes
+# We account for other paramaters here
+URLLENGTH = 2048 - 200
+
+# Default cache timeout for the list of metric paths
 DEFAULT_METRICS_CACHE_EXPIRY = 300
 
 log = logging.getLogger(__name__)
@@ -31,7 +35,9 @@ def chunk(nodelist, length):
         else:
             chunklist.append(node)
             linelength += nodelength
-    yield chunklist
+
+    if chunklist:
+        yield chunklist
 
 
 def load_jsonp(s):
@@ -92,6 +98,7 @@ class MetronomeFinder(object):
         """Find nodes for 'foo.*.{a,b}.latency' query expressions
         :type query: graphite_api.storage.FindQuery
         """
+        # Within a lock to prevent 'thundering herd' duplicate cache updates
         with self._metrics_lock:
             metrics = self._get_metrics_list()
 
@@ -124,15 +131,65 @@ class MetronomeFinder(object):
         resp = requests.get(self._metronome_url,
                             params=dict(do='get-metrics', callback='_'))
         data = load_jsonp(resp.text)
+        log.info('Loaded %i metric paths', len(data['metrics']))
 
-        self._metrics_cache = data['metrics']
+        # Extend available metrics with mapped view names
+        self._metrics_cache = self._pdns_map_views(data['metrics'])
         self._metrics_cache_ts = time.time()
-        log.info('Loaded %i metric paths', len(self._metrics_cache))
+
         return self._metrics_cache
+
+    _r_pdns_map_views = re.compile(
+        r'^pdns\.(?P<name>.+)\.(?P<type>auth|recursor)\.(?P<extra>.+?)$'
+    )
+    def _pdns_map_views(self, paths):
+        """Add virtual view metrics that reorganize Metronome PDNS data
+
+        Fixes metric paths that not in a proper format, and makes it easy to
+        just select all recursors in Grafana.
+
+            pdns.foo.auth.* -> _pdns_view.auth.foo.auth.*
+            pdns.foo.recursor.* -> _pdns_view.recursor.foo.recursor.*
+            pdns.a.example.com.auth.* -> _pdns_view.auth.a--example--com.auth.*
+
+        This way you can use `_pdns_view.recursor.*` as a Grafana template
+        query.
+        """
+        view_paths = []
+        for path in paths:
+            m = self._r_pdns_map_views.match(path)
+            if m:
+                new_name = m.group('name').replace('.', '--')
+                view = '_pdns_view.{type}.{name}.{type}.{extra}'.format(
+                    type=m.group('type'),
+                    name=new_name,
+                    extra=m.group('extra'))
+                view_paths.append(view)
+        return paths + view_paths
+
+    def _pdns_unmap_views(self, paths):
+        """Reverse view mapping before fetching data"""
+        unmapped = []
+        renames = {}
+        for path in paths:
+            if path.startswith('_pdns_view.'):
+                p = path.split('.')
+                new_path = 'pdns.{name}.{type}.{extra}'.format(
+                    name=p[2].replace('--', '.'),
+                    type=p[1],
+                    extra='.'.join(p[4:])
+                )
+                renames[new_path] = path
+                unmapped.append(new_path)
+            else:
+                unmapped.append(path)
+        return unmapped, renames
 
     def fetch_multi(self, nodes, start_time, end_time):
         """Fetch data for multiple nodes"""
-        paths = [ node.path for node in nodes ]
+        # Rename view paths to real metric paths for querying
+        paths, renames = self._pdns_unmap_views([ node.path for node in nodes ])
+
         log.info('fetch_multi: %s', ' '.join(paths))
 
         data = {}
@@ -147,26 +204,19 @@ class MetronomeFinder(object):
         for pathlist in chunk(paths, URLLENGTH):
             series = self._retrieve_data(pathlist, start_time, end_time, points)
             data.update(series)
-            """
-            tmpdata = requests.get(urls.metrics,
-                                   params={'path': pathlist,
-                                           'from': start_time,
-                                           'to': end_time}).json()
-            if 'error' in tmpdata:
-                return (start_time, end_time, end_time - start_time), {}
 
-            if 'series' in data:
-                data['series'].update(tmpdata['series'])
-            else:
-                data = tmpdata
-            """
+        # Restore view names for the result
+        for old, new in renames.items():
+            data[new] = data.pop(old)
 
         time_info = start_time, end_time, step
         return time_info, data
 
     def _retrieve_data(self, paths, start_time, end_time, points):
-        log.debug('_retrieve_data %s [%s %s %s]',
-                  ' '.join(paths), start_time, end_time, points)
+        log.debug('_retrieve_data %s [n=%i start=%s end=%s points=%s]',
+                  ' '.join(paths), len(paths),
+                  start_time, end_time, points)
+        t0 = time.time()
         params = dict(
             do='retrieve',
             name=','.join(paths),
@@ -177,6 +227,12 @@ class MetronomeFinder(object):
         )
         resp = requests.get(self._metronome_url, params=params)
         data = load_jsonp(resp.text)
+        t1 = time.time()
+        size_kb = len(resp.text) / 1024.0
+        kbps = size_kb / (t1 - t0)
+        log.debug('_retrieve_data took %.1fs for %i paths (%.1f kB; %.1f kB/s)',
+                  t1 - t0, len(paths), size_kb, kbps)
+
         return {
             path: [ val for (ts, val) in series ]
             for path, series in data['raw'].items()
