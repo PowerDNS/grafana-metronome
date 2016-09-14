@@ -5,6 +5,8 @@ services:
     image: grafana/grafana
     volumes:
       - data:/var/lib/grafana
+      - ./dashboards:/dashboards
+      - ./grafana.ini:/etc/grafana/grafana.ini
       # Uncomment these to override the logo and favicon in Grafana
       #- ./img/powerdns-logo.svg:/usr/share/grafana/public/img/grafana_icon.svg:ro
       #- ./img/powerdns-favicon.png:/usr/share/grafana/public/img/fav32.png:ro
