@@ -73,8 +73,18 @@ class Dashboard:
             "type": "query"
         })
 
-    def add_graph_row(self, title, targets, collapse=False, stack=False, 
-                      y_min=0, y_max=None, y_format='short'):
+    def add_row(self, title, collapse=False):
+        row = {
+            "title": title,
+            "collapse": collapse,
+            "editable": True,
+            "height": "250px",
+            "panels": [],
+        }
+        self.data['rows'].append(row)
+
+    def add_graph(self, title, targets, stack=False, span=12,
+                  y_min=0, y_max=None, y_format='short'):
         assert isinstance(targets, list)
         panel = {
            "title": title,
@@ -111,7 +121,7 @@ class Dashboard:
            "points": False,
            "renderer": "flot",
            "seriesOverrides": [],
-           "span": 12,
+           "span": span,
            "stack": stack,
            "steppedLine": False,
            "targets": [
@@ -149,14 +159,12 @@ class Dashboard:
              }
            ]
         }
-        row = {
-            "title": title,
-            "collapse": collapse,
-            "editable": True,
-            "height": "250px",
-            "panels": [panel],
-        }
-        self.data['rows'].append(row)
+        self.data['rows'][-1]['panels'].append(panel)
+
+    def add_graph_row(self, title, targets, collapse=False, **graph_options):
+        assert isinstance(targets, list)
+        self.add_row(title, collapse=collapse)
+        self.add_graph(title, targets, **graph_options)
     
     def save(self, fpath):
         with open(fpath, 'w', encoding='utf-8') as f:
@@ -166,6 +174,10 @@ class Dashboard:
     def _next_id(self):
         self.last_id += 1
         return self.last_id
+
+
+def compact(s):
+    return ' '.join( x.strip() for x in s.split('\n') ).strip()
 
 
 dnsdist = Dashboard(title="PowerDNS dnsdist [default]")
@@ -181,8 +193,10 @@ dnsdist.add_graph_row(
     ],
 )
 
-dnsdist.add_graph_row(
+dnsdist.add_row('Latency')
+dnsdist.add_graph(
     title='Latency (answers/s in a latency band)',
+    span=6,
     targets=[
         "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.latency0-1), 10), '<1 ms')",
         "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.latency1-10), 10), '<10 ms')",
@@ -193,17 +207,21 @@ dnsdist.add_graph_row(
     ],
     stack=True
 )
-
-dnsdist.add_graph_row(
-    title='Timeouts and errors',
+dnsdist.add_graph(
+    title='Average latency',
+    span=6,
+    y_format='µs',
     targets=[
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.downstream-timeouts), 10), 'Timeouts/s')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.downstream-send-errors), 10), 'Errors/s')",
+        "alias(dnsdist.$dnsdist.main.latency-avg100, '100 packet average')",
+        "alias(dnsdist.$dnsdist.main.latency-avg10000, '10,000 packet average')",
+        "alias(dnsdist.$dnsdist.main.latency-avg1000000, '1,000,000 packet average')",
     ],
 )
 
-dnsdist.add_graph_row(
+dnsdist.add_row('Queries drops and policy')
+dnsdist.add_graph(
     title='Query drops',
+    span=6,
     targets=[
         "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.rule-drop), 10), 'Rule drops/s')",
         "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.acl-drops), 10), 'ACL drops/s')",
@@ -211,14 +229,33 @@ dnsdist.add_graph_row(
         "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.block-filter), 10), 'Blockfilter drops/s')",
     ],
 )
+dnsdist.add_graph(
+    title='Query policy',
+    span=6,
+    targets=[
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.rdqueries), 10), 'RD Queries/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.rule-nxdomain), 10), 'Rule NXDomain/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.self-answered), 10), 'Rule self-answered/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.no-policy), 10), 'Rule self-answered/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.noncompliant-queries), 10), 'Non-compliant queries/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.noncompliant-responses), 10), 'Non-compliant responses/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.empty-queries), 10), 'Empty queries/s')",
+    ],
+)
 
-
-def compact(s):
-    return ' '.join( x.strip() for x in s.split('\n') ).strip()
-
+dnsdist.add_row('Timeouts, errors and cache miss rate')
+dnsdist.add_graph(
+    title='Timeouts and errors',
+    span=6,
+    targets=[
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.downstream-timeouts), 10), 'Timeouts/s')",
+        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.downstream-send-errors), 10), 'Errors/s')",
+    ],
+)
 # TODO: filter out small values? Now a single miss will show as 100%
-dnsdist.add_graph_row(
+dnsdist.add_graph(
     title='Cache miss rate',
+    span=6,
     y_format='percentunit',
     targets=[
         compact("""
@@ -235,31 +272,10 @@ dnsdist.add_graph_row(
     ],
 )
 
-dnsdist.add_graph_row(
-    title='Query policy',
-    targets=[
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.rdqueries), 10), 'RD Queries/s')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.rule-nxdomain), 10), 'Rule NXDomain/s')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.self-answered), 10), 'Rule self-answered/s')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.no-policy), 10), 'Rule self-answered/s')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.noncompliant-queries), 10), 'Non-compliant queries/s')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.noncompliant-responses), 10), 'Non-compliant responses/s')",
-        "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.empty-queries), 10), 'Empty queries/s')",
-    ],
-)
-
-dnsdist.add_graph_row(
-    title='Average latency',
-    y_format='µs',
-    targets=[
-        "alias(dnsdist.$dnsdist.main.latency-avg100, '100 packet average')",
-        "alias(dnsdist.$dnsdist.main.latency-avg10000, '10,000 packet average')",
-        "alias(dnsdist.$dnsdist.main.latency-avg1000000, '1,000,000 packet average')",
-    ],
-)
-
-dnsdist.add_graph_row(
+dnsdist.add_row('CPU and memory usage')
+dnsdist.add_graph(
     title='CPU usage',
+    span=6,
     y_format='percent',
     stack=True,
     targets=[
@@ -268,66 +284,145 @@ dnsdist.add_graph_row(
     ],
 )
 
-dnsdist.add_graph_row(
+dnsdist.add_graph(
     title='Memory usage',
+    span=6,
     y_format='bytes',
     targets=[
         "alias(dnsdist.$dnsdist.main.real-memory-usage, 'Memory usage')",
     ],
 )
 
-dnsdist.add_graph_row(
+dnsdist.add_row('File descriptors, uptime and dynamic block size')
+dnsdist.add_graph(
     title='File descriptor usage',
+    span=4,
     targets=[
         "alias(dnsdist.$dnsdist.main.fd-usage, 'Number of file descriptors')",
     ],
 )
-
-dnsdist.add_graph_row(
+dnsdist.add_graph(
     title='Uptime',
     y_format='s',
+    span=4,
     targets=[
         "alias(dnsdist.$dnsdist.main.uptime, 'Uptime')",
     ],
 )
-
-dnsdist.add_graph_row(
+dnsdist.add_graph(
     title='Dynamic block size',
-    collapse=True,
+    span=4,
     targets=[
         "alias(dnsdist.$dnsdist.main.dyn-block-nmg-size, 'Number of entries')",
     ],
 )
 
-dnsdist.add_graph_row(
+dnsdist.add_row('Queries and latency per server')
+dnsdist.add_graph(
     title='Queries/s per server',
+    span=6,
     targets=[
         "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.servers.*.queries), 10), 4)",
     ],
 )
-dnsdist.add_graph_row(
-    title='Drops/s per server',
-    targets=[
-        "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.servers.*.drops), 10), 4)",
-    ],
-)
-dnsdist.add_graph_row(
-    title='Send errors/s per server',
-    targets=[
-        "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.servers.*.senderrors), 10), 4)",
-    ],
-)
-dnsdist.add_graph_row(
+dnsdist.add_graph(
     title='Latency per server',
     y_format='µs',
+    span=6,
     targets=[
         "aliasByNode(dnsdist.$dnsdist.main.servers.*.latency, 4)",
     ],
 )
-dnsdist.add_graph_row(
+
+dnsdist.add_row('Drops, send errors and outstanding per server')
+dnsdist.add_graph(
+    title='Drops/s per server',
+    span=4,
+    targets=[
+        "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.servers.*.drops), 10), 4)",
+    ],
+)
+dnsdist.add_graph(
+    title='Send errors/s per server',
+    span=4,
+    targets=[
+        "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.servers.*.senderrors), 10), 4)",
+    ],
+)
+dnsdist.add_graph(
     title='Outstanding per server',
+    span=4,
     targets=[
         "aliasByNode(dnsdist.$dnsdist.main.servers.*.outstanding, 4)",
+    ],
+)
+
+dnsdist.add_row('Servers and cache size per pool')
+dnsdist.add_graph(
+    title='Servers per pool',
+    span=4,
+    targets=[
+        "aliasByNode(dnsdist.$dnsdist.main.pools.*.servers, 4)",
+    ],
+)
+dnsdist.add_graph(
+    title='Cache size per pool (max number of entries)',
+    span=4,
+    targets=[
+        "aliasByNode(dnsdist.$dnsdist.main.pools.*.cache-size, 4)",
+    ],
+)
+dnsdist.add_graph(
+    title='Cache size per pool (current number of entries)',
+    span=4,
+    targets=[
+        "aliasByNode(dnsdist.$dnsdist.main.pools.*.cache-entries, 4)",
+    ],
+)
+
+dnsdist.add_row('Cache hits/misses per pool')
+dnsdist.add_graph(
+    title='Cache hits per pool',
+    span=6,
+    targets=[
+        "aliasByNode(dnsdist.$dnsdist.main.pools.*.cache-hits, 4)",
+    ],
+)
+dnsdist.add_graph(
+    title='Cache misses per pool',
+    span=6,
+    targets=[
+        "aliasByNode(dnsdist.$dnsdist.main.pools.*.cache-misses, 4)",
+    ],
+)
+
+dnsdist.add_row('Cache deferred and collisions per pool')
+dnsdist.add_graph(
+    title='Cache deferred inserts per pool',
+    span=3,
+    targets=[
+        "aliasByNode(dnsdist.$dnsdist.main.pools.*.cache-deferred-inserts, 4)",
+    ],
+)
+dnsdist.add_graph(
+    title='Cache deferred lookups per pool',
+    span=3,
+    targets=[
+        "aliasByNode(dnsdist.$dnsdist.main.pools.*.cache-deferred-lookups, 4)",
+    ],
+)
+dnsdist.add_graph(
+    title='Cache lookup collisions per pool',
+    span=3,
+    targets=[
+        "aliasByNode(dnsdist.$dnsdist.main.pools.*.cache-lookup-collisions, 4)",
+    ],
+)
+dnsdist.add_graph(
+    title='Cache insert collisions per pool',
+    span=3,
+    targets=[
+        "aliasByNode(dnsdist.$dnsdist.main.pools.*.cache-insert-collisions, 4)",
     ],
 )
 
@@ -337,70 +432,6 @@ dnsdist.add_graph_row(
     collapse=True,
     targets=[
         "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.frontends.*.queries), 10), 4)",
-    ],
-)
-
-dnsdist.add_graph_row(
-    title='Servers per pool',
-    collapse=True,
-    targets=[
-        "aliasByNode(dnsdist.$dnsdist.main.pools.*.servers, 4)",
-    ],
-)
-dnsdist.add_graph_row(
-    title='Cache size per pool (max number of entries)',
-    collapse=True,
-    targets=[
-        "aliasByNode(dnsdist.$dnsdist.main.pools.*.cache-size, 4)",
-    ],
-)
-dnsdist.add_graph_row(
-    title='Cache size per pool (current number of entries)',
-    collapse=True,
-    targets=[
-        "aliasByNode(dnsdist.$dnsdist.main.pools.*.cache-entries, 4)",
-    ],
-)
-dnsdist.add_graph_row(
-    title='Cache hits per pool',
-    collapse=True,
-    targets=[
-        "aliasByNode(dnsdist.$dnsdist.main.pools.*.cache-hits, 4)",
-    ],
-)
-dnsdist.add_graph_row(
-    title='Cache misses per pool',
-    collapse=True,
-    targets=[
-        "aliasByNode(dnsdist.$dnsdist.main.pools.*.cache-misses, 4)",
-    ],
-)
-dnsdist.add_graph_row(
-    title='Cache deferred inserts per pool',
-    collapse=True,
-    targets=[
-        "aliasByNode(dnsdist.$dnsdist.main.pools.*.cache-deferred-inserts, 4)",
-    ],
-)
-dnsdist.add_graph_row(
-    title='Cache deferred lookups per pool',
-    collapse=True,
-    targets=[
-        "aliasByNode(dnsdist.$dnsdist.main.pools.*.cache-deferred-lookups, 4)",
-    ],
-)
-dnsdist.add_graph_row(
-    title='Cache lookup collisions per pool',
-    collapse=True,
-    targets=[
-        "aliasByNode(dnsdist.$dnsdist.main.pools.*.cache-lookup-collisions, 4)",
-    ],
-)
-dnsdist.add_graph_row(
-    title='Cache insert collisions per pool',
-    collapse=True,
-    targets=[
-        "aliasByNode(dnsdist.$dnsdist.main.pools.*.cache-insert-collisions, 4)",
     ],
 )
 
