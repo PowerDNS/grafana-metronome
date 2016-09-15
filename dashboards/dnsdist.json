@@ -72,7 +72,7 @@
           "timeShift": null,
           "title": "Number of queries",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -101,6 +101,7 @@
           ]
         }
       ],
+      "showTitle": false,
       "title": "Number of queries"
     },
     {
@@ -135,7 +136,7 @@
           "lines": true,
           "linewidth": 2,
           "links": [],
-          "nullPointMode": "null",
+          "nullPointMode": "zero",
           "percentage": false,
           "pointradius": 5,
           "points": false,
@@ -180,7 +181,7 @@
           "timeShift": null,
           "title": "Latency (answers/s in a latency band)",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -265,7 +266,7 @@
           "timeShift": null,
           "title": "Average latency",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -294,6 +295,7 @@
           ]
         }
       ],
+      "showTitle": false,
       "title": "Latency"
     },
     {
@@ -363,7 +365,7 @@
           "timeShift": null,
           "title": "Query drops",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -468,7 +470,7 @@
           "timeShift": null,
           "title": "Query policy",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -497,6 +499,7 @@
           ]
         }
       ],
+      "showTitle": false,
       "title": "Queries drops and policy"
     },
     {
@@ -556,7 +559,7 @@
           "timeShift": null,
           "title": "Timeouts and errors",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -631,7 +634,7 @@
           "timeShift": null,
           "title": "Cache miss rate",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -660,6 +663,7 @@
           ]
         }
       ],
+      "showTitle": false,
       "title": "Timeouts, errors and cache miss rate"
     },
     {
@@ -694,7 +698,7 @@
           "lines": true,
           "linewidth": 2,
           "links": [],
-          "nullPointMode": "null",
+          "nullPointMode": "zero",
           "percentage": false,
           "pointradius": 5,
           "points": false,
@@ -719,7 +723,7 @@
           "timeShift": null,
           "title": "CPU usage",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -794,7 +798,7 @@
           "timeShift": null,
           "title": "Memory usage",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -823,6 +827,7 @@
           ]
         }
       ],
+      "showTitle": false,
       "title": "CPU and memory usage"
     },
     {
@@ -877,7 +882,7 @@
           "timeShift": null,
           "title": "File descriptor usage",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -952,7 +957,7 @@
           "timeShift": null,
           "title": "Uptime",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -1027,7 +1032,7 @@
           "timeShift": null,
           "title": "Dynamic block size",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -1056,10 +1061,11 @@
           ]
         }
       ],
+      "showTitle": false,
       "title": "File descriptors, uptime and dynamic block size"
     },
     {
-      "collapse": false,
+      "collapse": true,
       "editable": true,
       "height": "250px",
       "panels": [
@@ -1110,7 +1116,7 @@
           "timeShift": null,
           "title": "Queries/s per server",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -1185,7 +1191,7 @@
           "timeShift": null,
           "title": "Latency per server",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -1212,15 +1218,7 @@
               "show": true
             }
           ]
-        }
-      ],
-      "title": "Queries and latency per server"
-    },
-    {
-      "collapse": false,
-      "editable": true,
-      "height": "250px",
-      "panels": [
+        },
         {
           "aliasColors": {},
           "bars": false,
@@ -1268,7 +1266,7 @@
           "timeShift": null,
           "title": "Drops/s per server",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -1343,7 +1341,7 @@
           "timeShift": null,
           "title": "Send errors/s per server",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -1418,7 +1416,7 @@
           "timeShift": null,
           "title": "Outstanding per server",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -1447,10 +1445,11 @@
           ]
         }
       ],
-      "title": "Drops, send errors and outstanding per server"
+      "showTitle": true,
+      "title": "Per server statistics"
     },
     {
-      "collapse": false,
+      "collapse": true,
       "editable": true,
       "height": "250px",
       "panels": [
@@ -1501,7 +1500,7 @@
           "timeShift": null,
           "title": "Servers per pool",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -1576,7 +1575,7 @@
           "timeShift": null,
           "title": "Cache size per pool (max number of entries)",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -1651,7 +1650,7 @@
           "timeShift": null,
           "title": "Cache size per pool (current number of entries)",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -1678,15 +1677,7 @@
               "show": true
             }
           ]
-        }
-      ],
-      "title": "Servers and cache size per pool"
-    },
-    {
-      "collapse": false,
-      "editable": true,
-      "height": "250px",
-      "panels": [
+        },
         {
           "aliasColors": {},
           "bars": false,
@@ -1734,7 +1725,7 @@
           "timeShift": null,
           "title": "Cache hits per pool",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -1809,7 +1800,7 @@
           "timeShift": null,
           "title": "Cache misses per pool",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -1836,15 +1827,7 @@
               "show": true
             }
           ]
-        }
-      ],
-      "title": "Cache hits/misses per pool"
-    },
-    {
-      "collapse": false,
-      "editable": true,
-      "height": "250px",
-      "panels": [
+        },
         {
           "aliasColors": {},
           "bars": false,
@@ -1892,7 +1875,7 @@
           "timeShift": null,
           "title": "Cache deferred inserts per pool",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -1967,7 +1950,7 @@
           "timeShift": null,
           "title": "Cache deferred lookups per pool",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -2042,7 +2025,7 @@
           "timeShift": null,
           "title": "Cache lookup collisions per pool",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -2117,7 +2100,7 @@
           "timeShift": null,
           "title": "Cache insert collisions per pool",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -2146,7 +2129,8 @@
           ]
         }
       ],
-      "title": "Cache deferred and collisions per pool"
+      "showTitle": true,
+      "title": "Per pool statistics"
     },
     {
       "collapse": true,
@@ -2200,7 +2184,7 @@
           "timeShift": null,
           "title": "Queries/s per frontend",
           "tooltip": {
-            "msResolution": true,
+            "msResolution": false,
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
@@ -2229,13 +2213,16 @@
           ]
         }
       ],
-      "title": "Queries/s per frontend"
+      "showTitle": true,
+      "title": "Per frontend statistics"
     }
   ],
   "schemaVersion": 12,
   "sharedCrosshair": true,
   "style": "light",
-  "tags": [],
+  "tags": [
+    "pdns-default"
+  ],
   "templating": {
     "list": [
       {
