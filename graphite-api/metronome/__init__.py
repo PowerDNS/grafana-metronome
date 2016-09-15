@@ -3,6 +3,7 @@ import time
 import re
 import logging
 from threading import Lock
+from multiprocessing.pool import ThreadPool
 
 from graphite_api.intervals import Interval, IntervalSet
 from graphite_api.node import LeafNode, BranchNode, Node
@@ -19,6 +20,8 @@ DEFAULT_METRICS_CACHE_EXPIRY = 300
 
 log = logging.getLogger(__name__)
 
+
+pool = ThreadPool(processes=3)
 
 def chunk(nodelist, length):
     """Splits lists of nodes so that they fit within url limits"""
@@ -201,8 +204,11 @@ class MetronomeFinder(object):
 
         # The chunking splits it into multiple requests if we would exceed
         # the maximum url path length
-        for pathlist in chunk(paths, URLLENGTH):
-            series = self._retrieve_data(pathlist, start_time, end_time, points)
+        # These are executed in parallel with a thread pool
+        def do_retrieve(pathlist):
+            return self._retrieve_data(pathlist, start_time, end_time, points)
+
+        for series in pool.map(do_retrieve, chunk(paths, URLLENGTH)):
             data.update(series)
 
         # Restore view names for the result
