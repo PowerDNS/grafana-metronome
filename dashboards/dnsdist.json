@@ -55,17 +55,17 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.servfail-responses), $smoothing), 'Servfail/s')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.servfail-responses_dt, $smoothing), 'Servfail/s')"
             },
             {
               "hide": false,
               "refId": "B",
-              "target": "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.queries), $smoothing), 'Queries/s')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.queries_dt, $smoothing), 'Queries/s')"
             },
             {
               "hide": false,
               "refId": "C",
-              "target": "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.responses), $smoothing), 'Responses/s')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.responses_dt, $smoothing), 'Responses/s')"
             }
           ],
           "timeFrom": null,
@@ -149,32 +149,32 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.latency0-1), $smoothing), '<1 ms')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.latency0-1_dt, $smoothing), '<1 ms')"
             },
             {
               "hide": false,
               "refId": "B",
-              "target": "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.latency1-10), $smoothing), '<10 ms')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.latency1-10_dt, $smoothing), '<10 ms')"
             },
             {
               "hide": false,
               "refId": "C",
-              "target": "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.latency10-50), $smoothing), '<50 ms')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.latency10-50_dt, $smoothing), '<50 ms')"
             },
             {
               "hide": false,
               "refId": "D",
-              "target": "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.latency50-100), $smoothing), '<100 ms')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.latency50-100_dt, $smoothing), '<100 ms')"
             },
             {
               "hide": false,
               "refId": "E",
-              "target": "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.latency100-1000), $smoothing), '<1000 ms')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.latency100-1000_dt, $smoothing), '<1000 ms')"
             },
             {
               "hide": false,
               "refId": "F",
-              "target": "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.latency-slow), $smoothing), 'With slow answers')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.latency-slow_dt, $smoothing), 'With slow answers')"
             }
           ],
           "timeFrom": null,
@@ -343,22 +343,22 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.rule-drop), $smoothing), 'Rule drops/s')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.rule-drop_dt, $smoothing), 'Rule drops/s')"
             },
             {
               "hide": false,
               "refId": "B",
-              "target": "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.acl-drops), $smoothing), 'ACL drops/s')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.acl-drops_dt, $smoothing), 'ACL drops/s')"
             },
             {
               "hide": false,
               "refId": "C",
-              "target": "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.dyn-blocked), $smoothing), 'Dynamic drops/s')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.dyn-blocked_dt, $smoothing), 'Dynamic drops/s')"
             },
             {
               "hide": false,
               "refId": "D",
-              "target": "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.block-filter), $smoothing), 'Blockfilter drops/s')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.block-filter_dt, $smoothing), 'Blockfilter drops/s')"
             }
           ],
           "timeFrom": null,
@@ -433,37 +433,37 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.rdqueries), $smoothing), 'RD Queries/s')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.rdqueries_dt, $smoothing), 'RD Queries/s')"
             },
             {
               "hide": false,
               "refId": "B",
-              "target": "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.rule-nxdomain), $smoothing), 'Rule NXDomain/s')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.rule-nxdomain_dt, $smoothing), 'Rule NXDomain/s')"
             },
             {
               "hide": false,
               "refId": "C",
-              "target": "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.self-answered), $smoothing), 'Rule self-answered/s')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.self-answered_dt, $smoothing), 'Rule self-answered/s')"
             },
             {
               "hide": false,
               "refId": "D",
-              "target": "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.no-policy), $smoothing), 'Rule self-answered/s')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.no-policy_dt, $smoothing), 'Rule self-answered/s')"
             },
             {
               "hide": false,
               "refId": "E",
-              "target": "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.noncompliant-queries), $smoothing), 'Non-compliant queries/s')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.noncompliant-queries_dt, $smoothing), 'Non-compliant queries/s')"
             },
             {
               "hide": false,
               "refId": "F",
-              "target": "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.noncompliant-responses), $smoothing), 'Non-compliant responses/s')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.noncompliant-responses_dt, $smoothing), 'Non-compliant responses/s')"
             },
             {
               "hide": false,
               "refId": "G",
-              "target": "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.empty-queries), $smoothing), 'Empty queries/s')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.empty-queries_dt, $smoothing), 'Empty queries/s')"
             }
           ],
           "timeFrom": null,
@@ -547,12 +547,12 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.downstream-timeouts), $smoothing), 'Timeouts/s')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.downstream-timeouts_dt, $smoothing), 'Timeouts/s')"
             },
             {
               "hide": false,
               "refId": "B",
-              "target": "alias(movingAverage(perSecond(dnsdist.$dnsdist.main.downstream-send-errors), $smoothing), 'Errors/s')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.downstream-send-errors_dt, $smoothing), 'Errors/s')"
             }
           ],
           "timeFrom": null,
@@ -627,7 +627,7 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "alias(movingAverage( divideSeries( perSecond(dnsdist.$dnsdist.main.cache-misses), sumSeries( perSecond(dnsdist.$dnsdist.main.cache-misses), perSecond(dnsdist.$dnsdist.main.cache-hits) ) ) , $smoothing), 'cache miss rate (%)')"
+              "target": "alias(movingAverage( divideSeries( dnsdist.$dnsdist.main.cache-misses_dt, sumSeries( dnsdist.$dnsdist.main.cache-misses_dt, dnsdist.$dnsdist.main.cache-hits_dt ) ) , $smoothing), 'cache miss rate (%)')"
             }
           ],
           "timeFrom": null,
@@ -711,12 +711,12 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "alias(scale(movingAverage(perSecond(dnsdist.$dnsdist.main.cpu-sys-msec), $smoothing), 0.1), 'System CPU')"
+              "target": "alias(scale(movingAverage(dnsdist.$dnsdist.main.cpu-sys-msec_dt, $smoothing), 0.1), 'System CPU')"
             },
             {
               "hide": false,
               "refId": "B",
-              "target": "alias(scale(movingAverage(perSecond(dnsdist.$dnsdist.main.cpu-user-msec), $smoothing), 0.1), 'Total (system+user) CPU')"
+              "target": "alias(scale(movingAverage(dnsdist.$dnsdist.main.cpu-user-msec_dt, $smoothing), 0.1), 'Total (system+user) CPU')"
             }
           ],
           "timeFrom": null,
@@ -1109,7 +1109,7 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.servers.*.queries), $smoothing), 4)"
+              "target": "aliasByNode(movingAverage(dnsdist.$dnsdist.main.servers.*.queries_dt, $smoothing), 4)"
             }
           ],
           "timeFrom": null,
@@ -1259,7 +1259,7 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.servers.*.drops), $smoothing), 4)"
+              "target": "aliasByNode(movingAverage(dnsdist.$dnsdist.main.servers.*.drops_dt, $smoothing), 4)"
             }
           ],
           "timeFrom": null,
@@ -1334,7 +1334,7 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.servers.*.senderrors), $smoothing), 4)"
+              "target": "aliasByNode(movingAverage(dnsdist.$dnsdist.main.servers.*.senderrors_dt, $smoothing), 4)"
             }
           ],
           "timeFrom": null,
@@ -1718,7 +1718,7 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.pools.*.cache-hits), $smoothing), 4)"
+              "target": "aliasByNode(movingAverage(dnsdist.$dnsdist.main.pools.*.cache-hits_dt, $smoothing), 4)"
             }
           ],
           "timeFrom": null,
@@ -1793,7 +1793,7 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.pools.*.cache-misses), $smoothing), 4)"
+              "target": "aliasByNode(movingAverage(dnsdist.$dnsdist.main.pools.*.cache-misses_dt, $smoothing), 4)"
             }
           ],
           "timeFrom": null,
@@ -1868,7 +1868,7 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.pools.*.cache-deferred-inserts), $smoothing), 4)"
+              "target": "aliasByNode(movingAverage(dnsdist.$dnsdist.main.pools.*.cache-deferred-inserts_dt, $smoothing), 4)"
             }
           ],
           "timeFrom": null,
@@ -1943,7 +1943,7 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.pools.*.cache-deferred-lookups), $smoothing), 4)"
+              "target": "aliasByNode(movingAverage(dnsdist.$dnsdist.main.pools.*.cache-deferred-lookups_dt, $smoothing), 4)"
             }
           ],
           "timeFrom": null,
@@ -2018,7 +2018,7 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.pools.*.cache-lookup-collisions), $smoothing), 4)"
+              "target": "aliasByNode(movingAverage(dnsdist.$dnsdist.main.pools.*.cache-lookup-collisions_dt, $smoothing), 4)"
             }
           ],
           "timeFrom": null,
@@ -2093,7 +2093,7 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.pools.*.cache-insert-collisions), $smoothing), 4)"
+              "target": "aliasByNode(movingAverage(dnsdist.$dnsdist.main.pools.*.cache-insert-collisions_dt, $smoothing), 4)"
             }
           ],
           "timeFrom": null,
@@ -2177,7 +2177,7 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasByNode(movingAverage(perSecond(dnsdist.$dnsdist.main.frontends.*.queries), $smoothing), 4)"
+              "target": "aliasByNode(movingAverage(dnsdist.$dnsdist.main.frontends.*.queries_dt, $smoothing), 4)"
             }
           ],
           "timeFrom": null,

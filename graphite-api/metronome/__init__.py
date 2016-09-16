@@ -1,8 +1,10 @@
+import functools
+import sys
 import json
 import time
 import re
 import logging
-from threading import Lock
+import threading
 from multiprocessing.pool import ThreadPool
 
 from graphite_api.intervals import Interval, IntervalSet
@@ -12,16 +14,19 @@ import requests
 
 
 # yahttp (used in Metronome) has a default max url length of 2048 bytes
-# We account for other paramaters here
-URLLENGTH = 2048 - 200
+# We account for other paramaters here. The 300 is empirical, and seems to have
+# to include all headers sent by the client, otherwise you end up with
+# 404 responses...
+URLLENGTH = 2048 - 300
 
 # Default cache timeout for the list of metric paths
 DEFAULT_METRICS_CACHE_EXPIRY = 300
 
 log = logging.getLogger(__name__)
 
+pool = ThreadPool(processes=4)
+request_session_cache = threading.local()
 
-pool = ThreadPool(processes=3)
 
 def chunk(nodelist, length):
     """Splits lists of nodes so that they fit within url limits"""
@@ -51,7 +56,25 @@ def load_jsonp(s):
     # Fix broken JSON
     raw = raw.replace(' derivative: ', ' "derivative":') \
              .replace(' raw: ', ' "raw":')
-    return json.loads(raw)
+
+    try:
+        data = json.loads(raw)
+    except ValueError:
+        log.error('Invalid JSONP:\n%s', s)
+        raise
+    return data
+
+
+def log_call(func):
+    """Decorator to log calls to functions"""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        t0 = time.time()
+        result = func(*args, **kwargs)
+        t1 = time.time()
+        log.debug('Call to %s took %.3fs', func.func_name, t1 - t0)
+        return result
+    return wrapper
 
 
 class Matcher(object):
@@ -84,6 +107,19 @@ class Matcher(object):
             return None, None
 
 
+class _LastFetch:
+    """Cached last fetch data to handle movingAverage"""
+    start_time = 0
+    end_time = 0
+    step = 0
+    points = 0
+
+    additional_points = 0
+    ext_start_time = 0
+    ext_points = 0
+    ext_data = None
+
+
 class MetronomeFinder(object):
     """Main entrypoint for the plugin"""
 
@@ -94,17 +130,27 @@ class MetronomeFinder(object):
         self._metrics_cache_expiry = \
             config['metronome'].get('metrics_cache_expiry',
                                     DEFAULT_METRICS_CACHE_EXPIRY)
-        self._metrics_lock = Lock()
+
+        # Cache the last data fetch, because the graphite-api first does a
+        # fetch_multi and single fetches for movingAverage.
+        self._last_fetch = _LastFetch()
+
         log.info('MetronomeFinder initialized: %s', self._metronome_url)
 
     def find_nodes(self, query):
         """Find nodes for 'foo.*.{a,b}.latency' query expressions
         :type query: graphite_api.storage.FindQuery
         """
-        # Within a lock to prevent 'thundering herd' duplicate cache updates
-        with self._metrics_lock:
-            metrics = self._get_metrics_list()
+        metrics, metrics_set = self._get_metrics_list()
 
+        # Shortcut if there is no wildcard
+        if not '{' in query.pattern and not '*' in query.pattern:
+            path = query.pattern
+            if path in metrics_set:
+                yield MetronomeLeafNode(path, MetronomeReader(path, self))
+            return
+
+        log.info("find_nodes: %s", query.pattern)
         matcher = Matcher(query.pattern)
         seen = set()
 
@@ -125,11 +171,12 @@ class MetronomeFinder(object):
                 yield BranchNode(path)
 
     _metrics_cache = None
+    _metrics_cache_set = None
     _metrics_cache_ts = 0
     def _get_metrics_list(self):
         """Get raw list of all metrics from Metronome"""
         if self._metrics_cache_ts + self._metrics_cache_expiry > time.time():
-            return self._metrics_cache
+            return self._metrics_cache, self._metrics_cache_set
 
         resp = requests.get(self._metronome_url,
                             params=dict(do='get-metrics', callback='_'))
@@ -138,9 +185,10 @@ class MetronomeFinder(object):
 
         # Extend available metrics with mapped view names
         self._metrics_cache = self._pdns_map_views(data['metrics'])
+        self._metrics_cache_set = set(self._metrics_cache)
         self._metrics_cache_ts = time.time()
 
-        return self._metrics_cache
+        return self._metrics_cache, self._metrics_cache_set
 
     _r_pdns_map_views = re.compile(
         r'^pdns\.(?P<name>.+)\.(?P<type>auth|recursor)\.(?P<extra>.+?)$'
@@ -160,6 +208,7 @@ class MetronomeFinder(object):
         """
         view_paths = []
         for path in paths:
+            view_paths.append(path)
             m = self._r_pdns_map_views.match(path)
             if m:
                 new_name = m.group('name').replace('.', '--')
@@ -168,7 +217,13 @@ class MetronomeFinder(object):
                     name=new_name,
                     extra=m.group('extra'))
                 view_paths.append(view)
-        return paths + view_paths
+
+        # Add time derivative version of metric (always returned by metronome)
+        with_dt = []
+        for path in view_paths:
+            with_dt.append(path)
+            with_dt.append(path + '_dt')
+        return with_dt
 
     def _pdns_unmap_views(self, paths):
         """Reverse view mapping before fetching data"""
@@ -188,61 +243,176 @@ class MetronomeFinder(object):
                 unmapped.append(path)
         return unmapped, renames
 
+    @log_call
     def fetch_multi(self, nodes, start_time, end_time):
         """Fetch data for multiple nodes"""
+        nodes_str = ','.join( x.path for x in nodes[:3] )
+        if len(nodes) > 3:
+            nodes_str += '...+{}'.format(len(nodes) - 3)
+        log.info('fetch_multi: %s [%s,%s>',
+                  nodes_str, start_time, end_time)
+
+        if len(nodes) == 1:
+            # Return cached data if this request is triggered by movingAverage()
+            path = nodes[0].path
+            time_info, values = \
+                self._fetch_from_last(path, start_time, end_time)
+            if time_info is not None:
+                return time_info, {path: values}
+
         # Rename view paths to real metric paths for querying
         paths, renames = self._pdns_unmap_views([ node.path for node in nodes ])
 
-        log.info('fetch_multi: %s', ' '.join(paths))
+        # Might use this hack to get the maximum number of points in the future
+        #caller = sys._getframe(2)
+        #request = caller.f_locals.get('request_options')
+        #log.warn("@@@@ %s", request)
 
-        data = {}
         # FIXME: can we get the requested number?
         points = min(720, (end_time - start_time) / 10)
         start_time = start_time
         end_time = end_time
         step = (end_time - start_time) / points
+        time_info = start_time, end_time, step
+
+        # Request extra data for movingAverage() that will be cached
+        # and requested later
+        additional_points = 100 # TODO: pick a good value
+        ext_points = points + additional_points
+        ext_start_time = start_time - additional_points * step
 
         # The chunking splits it into multiple requests if we would exceed
         # the maximum url path length
-        # These are executed in parallel with a thread pool
+        # TODO: not entirely correct anymore with the path manipulation, but
+        #       still works
         def do_retrieve(pathlist):
-            return self._retrieve_data(pathlist, start_time, end_time, points)
+            try:
+                return self._retrieve_data(
+                    pathlist, ext_start_time, end_time, ext_points)
+            except Exception as e:
+                log.exception('Exception in do_retrieve')
+                raise
 
+        # These are executed in parallel with a thread pool
+        ext_data = {}
         for series in pool.map(do_retrieve, chunk(paths, URLLENGTH)):
-            data.update(series)
+            ext_data.update(series)
 
         # Restore view names for the result
         for old, new in renames.items():
-            data[new] = data.pop(old)
+            ext_data[new] = ext_data.pop(old)
 
-        time_info = start_time, end_time, step
+        # Cache the last data fetch, because the graphite-api first does a
+        # fetch_multi and then repeats it one by one.
+        last = self._last_fetch
+        last.start_time = start_time
+        last.end_time = end_time
+        last.step = step
+        last.points = points
+        last.additional_points = additional_points
+        last.ext_start_time = ext_start_time
+        last.ext_points = ext_points
+        last.ext_data = ext_data
+
+        # Now strip the extended points for the result the caller requested
+        data = {
+            path: values[additional_points:]
+            for path, values in ext_data.items()
+        }
+
         return time_info, data
 
+    def _fetch_from_last(self, path, start_time, end_time):
+        # Return cached data if this is a request triggered by movingAverage(),
+        # which can be identified by an end_time equal to last start_time
+        last = self._last_fetch
+        if last.ext_data is None:
+            return None, None
+
+        end_time_match = end_time == last.start_time
+        has_range = start_time >= last.ext_start_time
+        has_path = path in last.ext_data
+        #log.debug(
+        #    '_fetch_from_last: cache (%s): '
+        #        'end_time_match=%s has_range=%s has_path=%s',
+        #    path, end_time_match, has_range, has_path)
+
+        if end_time_match and has_range and has_path:
+            points = int((end_time - start_time) / last.step)
+            from_point = last.additional_points - points
+            to_point = last.additional_points
+            values = last.ext_data[path][from_point:to_point]
+            time_info = start_time, end_time, last.step
+
+            log.debug(
+                '_fetch_from_last: movingAverage cached data: '
+                    '[%s,%s> out of [%s~%s,%s> for %s (%i points)',
+                start_time, end_time,
+                last.ext_start_time, last.start_time,
+                last.end_time,
+                path, points)
+
+            return time_info, values
+
+        return None, None
+
     def _retrieve_data(self, paths, start_time, end_time, points):
+        # The _dt indicated the derivative version of the data
+        base_paths = []
+        for path in paths:
+            if path.endswith('_dt'):
+                path = path[:-3]
+            if not path in base_paths:
+                base_paths.append(path)
+
         log.debug('_retrieve_data %s [n=%i start=%s end=%s points=%s]',
-                  ' '.join(paths), len(paths),
-                  start_time, end_time, points)
+            ' '.join(base_paths), len(base_paths),
+            start_time, end_time, points)
+
         t0 = time.time()
         params = dict(
             do='retrieve',
-            name=','.join(paths),
+            name=','.join(base_paths),
             begin=start_time,
             end=end_time,
             datapoints=points,
             callback='_'
         )
-        resp = requests.get(self._metronome_url, params=params)
+
+        # Allows for keepalive
+        #session = getattr(request_session_cache, 'session', None)
+        #if session is None:
+        #    session = requests.session()
+        #    request_session_cache.session = session
+        session = requests.session()
+
+        try:
+            resp = session.get(self._metronome_url, params=params)
+        except requests.RequestException as e:
+            log.error("Exception while fetching data: %s", str(e))
+            raise
+
+        if resp.status_code != 200:
+            log.error(
+                '_retrieve_data: response code %s != 200', resp.status_code)
+            return {}
+
         data = load_jsonp(resp.text)
         t1 = time.time()
         size_kb = len(resp.text) / 1024.0
         kbps = size_kb / (t1 - t0)
         log.debug('_retrieve_data took %.1fs for %i paths (%.1f kB; %.1f kB/s)',
-                  t1 - t0, len(paths), size_kb, kbps)
+                  t1 - t0, len(base_paths), size_kb, kbps)
 
-        return {
-            path: [ val for (ts, val) in series ]
-            for path, series in data['raw'].items()
-        }
+        series_dict = {}
+        for path, series in data['raw'].items():
+            if path in paths:
+                series_dict[path] = [ val for (ts, val) in series ]
+        for path, series in data['derivative'].items():
+            if path + '_dt' in paths:
+                series_dict[path + '_dt'] = [ val for (ts, val) in series ]
+
+        return series_dict
 
 
 class MetronomeLeafNode(LeafNode):
@@ -262,6 +432,8 @@ class MetronomeReader(object):
         self.path = path
         self._finder = finder
 
+    # noinspection PyProtectedMember
+    @log_call
     def fetch(self, start_time, end_time):
         time_info, series = \
             self._finder.fetch_multi([Node(self.path)], start_time, end_time)

@@ -25,9 +25,22 @@ services:
     volumes:
       - graphiteapi:/src/graphite
       - ./graphite-api/metronome:/usr/local/lib/python2.7/dist-packages/metronome
+      # To allow updates without rebuilds
+      - ./graphite-api/graphite-api.yaml:/etc/graphite-api.yaml
     networks:
       - net
-    command: gunicorn -b 0.0.0.0:8000 -w 2 --threads 10 --timeout 60 --reload --log-level debug --access-logfile /dev/stdout graphite_api.app:app
+    # We need a lot of worker processes. Graphite-API does not appear to be threadsafe...
+    command: gunicorn -b 0.0.0.0:8000 -w 8 --timeout 30 --reload --log-level debug --access-logfile - --access-logformat '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s [%(L)ss] %(p)s' graphite_api.app:app
+  
+  # Gunicorn with sync worker processes does not work well with grafana, so we run it behind nginx
+  graphiteproxy:
+    image: nginx:stable-alpine
+    volumes:
+     - ./graphite-api/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports: 
+      - "18002:80"
+    networks:
+      - net
 
 volumes:
   data:

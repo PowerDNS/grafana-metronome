@@ -6,10 +6,11 @@ functions:
   - graphite_api.functions.PieFunctions
 metronome:
   url: https://metrics.powerdns.com/metronome
+  #url: http://192.168.99.153:18004
   metrics_cache_expiry: 300
 logging:
   version: 1
-  disable_existing_loggers: true
+  #disable_existing_loggers: true
   handlers:
     file:
       class: logging.FileHandler
@@ -39,8 +40,12 @@ logging:
         - stdout
       propagate: true
       level: DEBUG
-    root:
+    gunicorn.access:
       handlers:
         - stdout
       propagate: true
+      level: INFO
+    root:
+      handlers:
+        - stdout
       level: INFO
