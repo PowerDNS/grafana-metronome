@@ -452,17 +452,17 @@ dnsdist.add_graph(
     ],
 )
 dnsdist.add_graph(
-    title='Cache lookup collisions per pool',
-    span=3,
-    targets=[
-        "aliasByNode(movingAverage(dnsdist.$dnsdist.main.pools.*.cache-lookup-collisions_dt, $smoothing), 4)",
-    ],
-)
-dnsdist.add_graph(
     title='Cache insert collisions per pool',
     span=3,
     targets=[
         "aliasByNode(movingAverage(dnsdist.$dnsdist.main.pools.*.cache-insert-collisions_dt, $smoothing), 4)",
+    ],
+)
+dnsdist.add_graph(
+    title='Cache lookup collisions per pool',
+    span=3,
+    targets=[
+        "aliasByNode(movingAverage(dnsdist.$dnsdist.main.pools.*.cache-lookup-collisions_dt, $smoothing), 4)",
     ],
 )
 

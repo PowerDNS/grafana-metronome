@@ -448,7 +448,7 @@
             {
               "hide": false,
               "refId": "D",
-              "target": "alias(movingAverage(dnsdist.$dnsdist.main.no-policy_dt, $smoothing), 'Rule self-answered/s')"
+              "target": "alias(movingAverage(dnsdist.$dnsdist.main.no-policy_dt, $smoothing), 'No policy/s')"
             },
             {
               "hide": false,
@@ -2018,12 +2018,12 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasByNode(movingAverage(dnsdist.$dnsdist.main.pools.*.cache-lookup-collisions_dt, $smoothing), 4)"
+              "target": "aliasByNode(movingAverage(dnsdist.$dnsdist.main.pools.*.cache-insert-collisions_dt, $smoothing), 4)"
             }
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Cache lookup collisions per pool",
+          "title": "Cache insert collisions per pool",
           "tooltip": {
             "msResolution": false,
             "shared": true,
@@ -2093,12 +2093,12 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasByNode(movingAverage(dnsdist.$dnsdist.main.pools.*.cache-insert-collisions_dt, $smoothing), 4)"
+              "target": "aliasByNode(movingAverage(dnsdist.$dnsdist.main.pools.*.cache-lookup-collisions_dt, $smoothing), 4)"
             }
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Cache insert collisions per pool",
+          "title": "Cache lookup collisions per pool",
           "tooltip": {
             "msResolution": false,
             "shared": true,
