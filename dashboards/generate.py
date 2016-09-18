@@ -274,7 +274,7 @@ dnsdist.add_graph(
         "alias(movingAverage(dnsdist.$dnsdist.main.rdqueries_dt, $smoothing), 'RD Queries/s')",
         "alias(movingAverage(dnsdist.$dnsdist.main.rule-nxdomain_dt, $smoothing), 'Rule NXDomain/s')",
         "alias(movingAverage(dnsdist.$dnsdist.main.self-answered_dt, $smoothing), 'Rule self-answered/s')",
-        "alias(movingAverage(dnsdist.$dnsdist.main.no-policy_dt, $smoothing), 'Rule self-answered/s')",
+        "alias(movingAverage(dnsdist.$dnsdist.main.no-policy_dt, $smoothing), 'No policy/s')",
         "alias(movingAverage(dnsdist.$dnsdist.main.noncompliant-queries_dt, $smoothing), 'Non-compliant queries/s')",
         "alias(movingAverage(dnsdist.$dnsdist.main.noncompliant-responses_dt, $smoothing), 'Non-compliant responses/s')",
         "alias(movingAverage(dnsdist.$dnsdist.main.empty-queries_dt, $smoothing), 'Empty queries/s')",
