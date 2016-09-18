@@ -196,6 +196,16 @@ class Dashboard:
         }
         self.data['rows'][-1]['panels'].append(panel)
 
+    def add_annotation(self, name, target):
+        self.data['annotations']['list'].append({
+            "name": name,
+            "datasource": DATASOURCE,
+            "iconColor": "rgba(255, 96, 96, 1)",
+            "enable": True,
+            "target": target
+            #"target": "alias(removeAboveValue(derivative(dnsdist.$dnsdist.main.uptime_dt), -1), 'server restart')"
+        })
+
     def add_graph_row(self, title, targets, collapse=False, **graph_options):
         assert isinstance(targets, list)
         self.add_row(title, collapse=collapse)
@@ -475,7 +485,10 @@ dnsdist.add_graph(
     ],
 )
 
-
+dnsdist.add_annotation(
+    name='dnsdist restart', 
+    target="alias(removeAboveValue(derivative(dnsdist.$dnsdist.main.uptime), -10), 'dnsdist restart')"
+)
 
 dnsdist.save(os.path.join(DIR, 'dnsdist.json'))
 
